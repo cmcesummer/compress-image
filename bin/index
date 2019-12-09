@@ -1,0 +1,35 @@
+#!/usr/bin/env node
+
+const program = require("commander");
+const coIM = require("../src/index");
+
+const toFixed = number => number.toFixed(2);
+
+program
+    .version(require("../package").version, "-v, --version")
+    /**
+     *  是否递归转文件夹化
+     */
+    .option("-r, --recursion", "is recursion or not")
+    /**
+     * 压缩文件放入新文件夹
+     */
+    .option("-p, --removePath <a>", "down path")
+    .action(() => {
+        const { recursion, removePath } = program;
+        coIM({
+            recursion,
+            removePath,
+            itemSuccess: ({ input, output }) => {
+                console.log(
+                    `${saveName}`,
+                    "\n",
+                    `${toFixed(input.size / 1024)} kb => ${toFixed(output.size / 1024)} kb,  压缩了： ${toFixed(
+                        ((input.size - output.size) / input.size) * 100
+                    )} %`
+                );
+            }
+        });
+    });
+
+program.parse(process.argv);

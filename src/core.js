@@ -46,6 +46,7 @@ module.exports = function(imgPath, downName, cb = () => {}) {
     return new Promise((resolve, reject) => {
         upload(imgPath, res => {
             const { input, output } = res;
+
             rp(output.url)
                 .pipe(fs.createWriteStream(downName))
                 .on("close", () => {
