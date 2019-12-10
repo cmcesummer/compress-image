@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 const program = require("commander");
+const chalk = require("chalk");
+const boxen = require("boxen");
 const coIM = require("../src/index");
 
 const toFixed = number => number.toFixed(2);
@@ -28,10 +30,24 @@ program
                 const os = output.size;
                 inputTotalSize += is;
                 outputTotalSize += os;
-                console.log(`${saveName}`, "\n", `${toFixed(is / 1024)} kb => ${toFixed(os / 1024)} kb,  压缩了： ${toFixed(((is - os) / is) * 100)} %`);
+                console.log(
+                    `${chalk.blue(saveName)}\n`,
+                    `${toFixed(is / 1024)} kb => ${toFixed(os / 1024)} kb,  压缩了： ${chalk.green(toFixed(((is - os) / is) * 100) + "%")}\n`
+                );
             },
             allSuccess: () => {
-                console.log(`\n压缩完毕， 总共优化体积: ${toFixed(((inputTotalSize - outputTotalSize) / inputTotalSize) * 100)}%`);
+                if (inputTotalSize === 0) {
+                    console.log(chalk.red(`该路径下无可压缩文件`));
+                    return;
+                }
+                console.log(
+                    chalk.green(
+                        boxen(`\n压缩完毕， 总共优化体积: ${toFixed(((inputTotalSize - outputTotalSize) / inputTotalSize) * 100)}%`, {
+                            padding: 1,
+                            borderStyle: "double"
+                        })
+                    )
+                );
             }
         });
     });

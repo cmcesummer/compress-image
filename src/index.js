@@ -50,8 +50,7 @@ async function readDir(opt) {
         const dirArray = await fs.readdir(dirpath);
         const asyncArray = [];
         for (const filename of dirArray) {
-            opt.filename = filename;
-            asyncArray.push(checkSave(opt));
+            asyncArray.push(checkSave({ ...opt, filename }));
         }
         await Promise.all(asyncArray);
     } catch (e) {
