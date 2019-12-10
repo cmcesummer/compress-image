@@ -5,6 +5,9 @@ const coIM = require("../src/index");
 
 const toFixed = number => number.toFixed(2);
 
+let inputTotalSize = 0,
+    outputTotalSize = 0;
+
 program
     .version(require("../package").version, "-v, --version")
     /**
@@ -20,14 +23,15 @@ program
         coIM({
             recursion,
             removePath,
-            itemSuccess: ({ input, output }) => {
-                console.log(
-                    `${saveName}`,
-                    "\n",
-                    `${toFixed(input.size / 1024)} kb => ${toFixed(output.size / 1024)} kb,  压缩了： ${toFixed(
-                        ((input.size - output.size) / input.size) * 100
-                    )} %`
-                );
+            itemSuccess: ({ saveName, input, output }) => {
+                const is = input.size;
+                const os = output.size;
+                inputTotalSize += is;
+                outputTotalSize += os;
+                console.log(`${saveName}`, "\n", `${toFixed(is / 1024)} kb => ${toFixed(os / 1024)} kb,  压缩了： ${toFixed(((is - os) / is) * 100)} %`);
+            },
+            allSuccess: () => {
+                console.log(`\n压缩完毕， 总共优化体积: ${toFixed(((inputTotalSize - outputTotalSize) / inputTotalSize) * 100)}%`);
             }
         });
     });
