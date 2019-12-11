@@ -3,17 +3,13 @@ const fs = require("fs-extra");
 
 const core = require("./core");
 
+const imagemin = require("imagemin");
+const imageminJpegtran = require("imagemin-jpegtran");
+const imageminPngquant = require("imagemin-pngquant");
+
 const list = [".png", ".jpg"];
 
 const MAX_SIZE = 5 * 1024 * 1024;
-
-async function cc(val) {
-    return new Promise(res => {
-        setTimeout(() => {
-            res(val);
-        }, 1000 + 5000 * Math.random());
-    });
-}
 
 module.exports = async function coIM(opt) {
     const cwd = process.cwd();
@@ -87,8 +83,25 @@ async function checkSave(opt) {
         }
         if (stat.isFile() && list.includes(path.extname(pathname)) && stat.size <= MAX_SIZE) {
             await fs.ensureDir(path.dirname(saveName));
-            const { input, output } = await core(pathname, saveName);
+
+            const files = await imagemin([pathname], {
+                glob: false,
+                destination: realSavePath,
+                plugins: [
+                    imageminJpegtran({
+                        progressive: true
+                        // arithmetic: true
+                    }),
+                    imageminPngquant({
+                        // quality: [0.6, 0.8]
+                    })
+                ]
+            });
+            const input = { size: stat.size };
+            const output = { size: files[0].data.length };
             if (itemSuccess) itemSuccess({ input, output, pathname, saveName });
+            // const { input, output } = await core(pathname, saveName);
+            // if (itemSuccess) itemSuccess({ input, output, pathname, saveName });
         }
     } catch (e) {
         console.log(e);

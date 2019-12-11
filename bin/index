@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+const path = require("path");
+
 const program = require("commander");
 const chalk = require("chalk");
 const boxen = require("boxen");
@@ -20,8 +22,9 @@ program
      * 压缩文件放入新文件夹
      */
     .option("-p, --removePath <a>", "down path")
-    .action(() => {
+    .action(async () => {
         const { recursion, removePath } = program;
+
         coIM({
             recursion,
             removePath,
