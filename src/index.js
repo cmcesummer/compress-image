@@ -1,11 +1,8 @@
 const path = require("path");
 const fs = require("fs-extra");
 
-const core = require("./core");
-
-const imagemin = require("imagemin");
-const imageminJpegtran = require("imagemin-jpegtran");
-const imageminPngquant = require("imagemin-pngquant");
+const tiny = require("./tiny");
+const local = require("./local");
 
 const list = [".png", ".jpg"];
 
@@ -21,13 +18,15 @@ module.exports = async function coIM(opt) {
         // 压缩完成一个的回调
         itemSuccess,
         // 全部压缩完成的回调
-        allSuccess
+        allSuccess,
+        // 使用的压缩类型
+        compressType
     } = opt;
     let realSavePath = path.join(cwd, "./");
     if (removePath) {
         realSavePath = path.join(cwd, "../", removePath);
     }
-    await readDir({ dirpath: cwd, realSavePath, recursion, itemSuccess });
+    await readDir({ dirpath: cwd, realSavePath, recursion, itemSuccess, compressType });
     if (allSuccess) allSuccess();
 };
 
@@ -65,7 +64,9 @@ async function checkSave(opt) {
         // 是否递归
         recursion,
         // 压缩完成一个的回调
-        itemSuccess
+        itemSuccess,
+        // 使用的压缩类型
+        compressType
     } = opt;
     try {
         const pathname = path.join(dirpath, filename);
@@ -83,25 +84,10 @@ async function checkSave(opt) {
         }
         if (stat.isFile() && list.includes(path.extname(pathname)) && stat.size <= MAX_SIZE) {
             await fs.ensureDir(path.dirname(saveName));
-
-            const files = await imagemin([pathname], {
-                glob: false,
-                destination: realSavePath,
-                plugins: [
-                    imageminJpegtran({
-                        progressive: true
-                        // arithmetic: true
-                    }),
-                    imageminPngquant({
-                        // quality: [0.6, 0.8]
-                    })
-                ]
-            });
-            const input = { size: stat.size };
-            const output = { size: files[0].data.length };
+            let core = local;
+            if (compressType === "tiny") core = tiny;
+            const { input, output } = await core(pathname, saveName, stat);
             if (itemSuccess) itemSuccess({ input, output, pathname, saveName });
-            // const { input, output } = await core(pathname, saveName);
-            // if (itemSuccess) itemSuccess({ input, output, pathname, saveName });
         }
     } catch (e) {
         console.log(e);

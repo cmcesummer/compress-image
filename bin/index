@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-
 const path = require("path");
 
+const inquirer = require("inquirer");
 const program = require("commander");
 const chalk = require("chalk");
 const boxen = require("boxen");
@@ -10,7 +10,13 @@ const coIM = require("../src/index");
 const toFixed = number => number.toFixed(2);
 
 let inputTotalSize = 0,
-    outputTotalSize = 0;
+    outputTotalSize = 0,
+    pngCount = 0,
+    jpgCount = 0,
+    pngiTotalSize = 0,
+    pngoTotalSize = 0,
+    jpgiTotalSize = 0,
+    jpgoTotalSize = 0;
 
 program
     .version(require("../package").version, "-v, --version")
@@ -25,7 +31,26 @@ program
     .action(async () => {
         const { recursion, removePath } = program;
 
+        const question = {
+            type: "list",
+            name: "compressType",
+            message: "选择压缩方式",
+            choices: [
+                {
+                    name: "- 本地算法压缩",
+                    value: "local"
+                },
+                {
+                    name: "- 远程自动压缩",
+                    value: "tiny"
+                }
+            ]
+        };
+
+        const type = await inquirer.prompt([question]);
+
         coIM({
+            ...type,
             recursion,
             removePath,
             itemSuccess: ({ saveName, input, output }) => {
@@ -33,6 +58,15 @@ program
                 const os = output.size;
                 inputTotalSize += is;
                 outputTotalSize += os;
+                if (path.extname(saveName) === ".png") {
+                    pngCount++;
+                    pngiTotalSize += is;
+                    pngoTotalSize += os;
+                } else {
+                    jpgCount++;
+                    jpgiTotalSize += is;
+                    jpgoTotalSize += os;
+                }
                 console.log(
                     `${chalk.blue(saveName)}\n`,
                     `${toFixed(is / 1024)} kb => ${toFixed(os / 1024)} kb,  压缩了： ${chalk.green(toFixed(((is - os) / is) * 100) + "%")}\n`
@@ -45,10 +79,16 @@ program
                 }
                 console.log(
                     chalk.green(
-                        boxen(`\n压缩完毕， 总共优化体积: ${toFixed(((inputTotalSize - outputTotalSize) / inputTotalSize) * 100)}%`, {
-                            padding: 1,
-                            borderStyle: "double"
-                        })
+                        boxen(
+                            `压缩完毕， 总共优化体积: ${toFixed(((inputTotalSize - outputTotalSize) / inputTotalSize) * 100)}%; \n` +
+                                `其中\n` +
+                                `png 文件： ${pngCount}件， 优化体积： ${pngCount ? toFixed(((pngiTotalSize - pngoTotalSize) / pngiTotalSize) * 100) : 0}%\n` +
+                                `jpg 文件： ${jpgCount}件， 优化体积： ${jpgCount ? toFixed(((jpgiTotalSize - jpgoTotalSize) / jpgiTotalSize) * 100) : 0}%`,
+                            {
+                                padding: 1,
+                                borderStyle: "double"
+                            }
+                        )
                     )
                 );
             }
