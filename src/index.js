@@ -86,7 +86,7 @@ async function checkSave(opt) {
             await fs.ensureDir(path.dirname(saveName));
             let core = local;
             if (compressType === "tiny") core = tiny;
-            const { input, output } = await core(pathname, saveName, stat);
+            const { input, output } = await core(pathname, saveName);
             if (itemSuccess) itemSuccess({ input, output, pathname, saveName });
         }
     } catch (e) {

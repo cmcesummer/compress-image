@@ -1,6 +1,19 @@
 const fs = require("fs");
 const rp = require("request");
 
+let cou = 0;
+
+const MAX_SIZE = 1;
+let overIndex = 0,
+    SLEEP_TIME = 1000,
+    nowIndex = 0;
+
+function sleep(time = 1000) {
+    return new Promise(res => {
+        setTimeout(res, time);
+    });
+}
+
 function upload({ imgPath, cb = () => {}, retryTime = 2 }) {
     const file = fs.readFileSync(imgPath);
 
@@ -25,17 +38,17 @@ function upload({ imgPath, cb = () => {}, retryTime = 2 }) {
                 body: file
             },
             (err, res, body) => {
+                let obj = {};
                 if (!err && body) {
                     try {
-                        const obj = JSON.parse(body);
-                        cb(obj);
+                        obj = JSON.parse(body);
                     } catch (e) {
                         console.log(e);
                     }
                 } else {
                     if (retryError <= retryTime) {
                         retryError++;
-                        post();
+                        setTimeout(post, SLEEP_TIME);
                         console.log(imgPath, `retry`, retryError);
                         return;
                     }
@@ -45,32 +58,62 @@ function upload({ imgPath, cb = () => {}, retryTime = 2 }) {
                         console.log(imgPath, err);
                     }
                 }
+                cb(obj);
             }
         );
     }
     post();
 }
 
-module.exports = function(imgPath, downName, cb = () => {}, retryTime = 2) {
+const cacheList = {
+    list: [],
+    request(param) {
+        nowIndex++;
+        if (nowIndex <= MAX_SIZE) {
+            upload(param);
+        } else {
+            this.list.push(param);
+        }
+    },
+    async over() {
+        overIndex++;
+        if (overIndex !== MAX_SIZE) return;
+        overIndex = 0;
+        nowIndex = 0;
+        const doArray = this.list.splice(0, MAX_SIZE);
+        await sleep(SLEEP_TIME);
+        for (const param of doArray) {
+            upload(param);
+        }
+    }
+};
+
+module.exports = function(imgPath, downName, retryTime = 2) {
     if (!imgPath || !downName) {
         console.log(`缺少参数`);
         return;
     }
     return new Promise((resolve, reject) => {
-        upload({
+        const param = {
             imgPath,
             retryTime,
             cb: res => {
+                cacheList.over();
                 const { input, output } = res;
                 if (!output) {
                     reject(`output is undefined`);
-                    console.log(res);
+                    console.log(imgPath, res);
+                    if (res.error === "too_many_requests") {
+                        SLEEP_TIME += 1000;
+                    }
                     return;
                 }
                 rp(output.url)
                     .pipe(fs.createWriteStream(downName))
                     .on("close", () => {
-                        cb({ input, output });
+                        // cb({ input, output });
+                        cou++;
+                        console.log(`==============  ${cou}`);
                         resolve({ input, output });
                     })
                     .on("error", e => {
@@ -78,6 +121,7 @@ module.exports = function(imgPath, downName, cb = () => {}, retryTime = 2) {
                         console.log(e);
                     });
             }
-        });
+        };
+        cacheList.request(param);
     });
 };

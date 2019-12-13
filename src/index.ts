@@ -19,6 +19,8 @@ export interface IItemSuccessParam {
 }
 
 export interface ICsIMG {
+    // 使用的压缩方式
+    compressType: "local" | "tiny";
     // 压缩并复制到新的文件夹
     removePath?: string;
     // 是否递归
