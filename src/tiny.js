@@ -1,8 +1,6 @@
 const fs = require("fs");
 const rp = require("request");
 
-let cou = 0;
-
 const MAX_SIZE = 1;
 let overIndex = 0,
     SLEEP_TIME = 1000,
@@ -112,8 +110,6 @@ module.exports = function(imgPath, downName, retryTime = 2) {
                     .pipe(fs.createWriteStream(downName))
                     .on("close", () => {
                         // cb({ input, output });
-                        cou++;
-                        console.log(`==============  ${cou}`);
                         resolve({ input, output });
                     })
                     .on("error", e => {

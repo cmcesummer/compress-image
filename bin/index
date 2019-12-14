@@ -11,6 +11,7 @@ const toFixed = number => number.toFixed(2);
 
 let inputTotalSize = 0,
     outputTotalSize = 0,
+    totalCount = 0,
     pngCount = 0,
     jpgCount = 0,
     pngiTotalSize = 0,
@@ -58,6 +59,7 @@ program
                 const os = output.size;
                 inputTotalSize += is;
                 outputTotalSize += os;
+                totalCount++;
                 if (path.extname(saveName) === ".png") {
                     pngCount++;
                     pngiTotalSize += is;
@@ -68,7 +70,7 @@ program
                     jpgoTotalSize += os;
                 }
                 console.log(
-                    `${chalk.blue(saveName)}\n`,
+                    `${totalCount} : ${chalk.blue(saveName)}\n`,
                     `${toFixed(is / 1024)} kb => ${toFixed(os / 1024)} kb,  压缩了： ${chalk.green(toFixed(((is - os) / is) * 100) + "%")}\n`
                 );
             },
